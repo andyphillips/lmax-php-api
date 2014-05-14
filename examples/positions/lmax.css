@@ -1,0 +1,131 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size:14px;
+}
+
+#header {
+	font-size:16px;
+	color:#C00000;
+	text-indent:10px;
+}
+
+#dateprev {
+	margin-left:30px;
+	padding:5px;
+}
+
+#download, #datenext {
+	padding:5px;
+	margin-left:5px;			
+}
+
+#results_table
+{
+   text-align: left;
+   table-layout: fixed;
+}
+
+tr.stripe 
+{
+   text-align: left;
+   background-color: #FEFEFE;
+}
+
+tr.stripe2
+{
+   text-align: left;
+   background-color: #EAEAEA;
+}
+
+th 
+{
+  background: #6B6B6B;
+  color: #FFFFFF; 
+  padding: 5px;
+  border-right: 1px solid #FFF;
+}
+
+td
+{
+  padding-top:4px;
+  padding-bottom:4px;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+#tabs
+{
+  clear:both;
+}
+
+table
+{
+  border-collapse: collapse;
+}
+
+div#table
+{
+  clear:both;
+  float:none;
+  font-size: 11px;
+  overflow: auto;
+  height: 235px;
+  width: 602px;
+}
+
+.tablist 
+{
+    float:left;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 20px;
+    padding-right: 20px;
+  	margin-top: 15px;
+  	margin-left: 5px;
+	border-bottom: 1px solid #FFF;
+}
+
+.tablist a 
+{
+   text-decoration: none;
+}
+
+.float 
+{
+  margin-left: 2px;
+  margin-right: 2px;
+  float: left;
+}
+
+.selected
+{
+   background: #6B6B6B;
+   color: #FFFFFF; 
+}
+
+.selected a
+{
+  text-decoration: none;  
+  color: #FFFFFF; 
+}
+
+.notselected
+{
+  background: #D5D5D5;
+}
+
+.notselected a
+{
+  color:  #6B6B6B;
+  text-decoration: none;  
+}
+
+#download a
+{
+  color: #FFFFFF;
+  text-decoration: none;  
+}

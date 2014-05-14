@@ -1,0 +1,102 @@
+<html>
+<head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><title>positions</title>
+<style type="text/css">
+@import url("lmax.css");
+</style>
+
+<script language="javascript" type="text/javascript" src="jquery/jquery.js"></script>
+
+<script language="javascript" type="text/javascript">
+(function ($) { 
+
+  // show a table of stats about the data. 
+  function update_table(divid, data) {
+   
+   var thisdiv = $(divid);
+   
+   if (!data) {
+     data="{\"error\":\"no data returned\"}"
+   }
+     
+   var posdata=eval('('+data+')');
+
+   if (posdata.hasOwnProperty("error")) {
+    
+     thisdiv.html("<div id=\"error\">An Error Occurred: "+posdata.error+"</div>"); 
+   
+   } else {
+   
+     thisdiv.html("<table id=\"results\"><tr><th>account_id</th><th>instrument_id</th><th>open_quantity</th></tr>");
+   
+     for (var key in posdata) {
+       var line = posdata[key];
+       if (key == "timestamp") {
+         var date = new Date(line*1000);
+         $('#timestamp').html("<h2>Positions</h2>As of " + date.toUTCString());
+       } else {
+         $('#results').append("<tr><td>"+line[0]+"</td><td>"+line[1]+"</td><td>"+line[2]+"</td></tr>");
+       }
+     }
+   } // error or not
+  } // update table
+
+  // request data from server and initiate plot.  
+  function go( request )
+  {
+     $("#info").html("requesting data"); // erase any previous results
+     $.post('get_data.php', request, function(data) { 
+	// print out table
+	 update_table ( '#info', data);	
+     });
+  }  
+
+  function start() {
+
+    // set up click handler for submitbutton
+    $('#submitbutton').submit(submitform);
+    
+    // log any errors
+    $("#info").ajaxError(function(event, request, settings, thrownError) { 
+       $(this).text("Error: No data returned. Please contact your administrator as this is probably a bug");
+     });
+    
+  }; // start 
+
+  function submitform(event) {
+     var req_user = $("#user").val();
+     var req_pass = $("#pass").val();
+     var req_live = $("#live:checked").val();
+     
+     go ( {username: req_user, password: req_pass, live: req_live});
+     
+     event.preventDefault();
+   }
+
+  $(function () {
+    start();
+  });
+
+})(jQuery);
+</script>
+</head>
+<body>
+<div id="login_info">
+<h2>Simple Position Checker</h2>
+<form id="submitbutton" >
+Username: <input type="text" name="user" id="user" value=""
+size="30"></input><br>
+Password: <input type="password" name="pass" id="pass" value=""
+size="30"></input><br>
+Environment: <input type="radio" name="env" checked>demo/testapi</input><input
+type="radio" name="env" value="live" id="live" >live</input><br>
+<input type="submit" value="Get Positions" method="post" ></input>
+</form>
+</div>
+<hr style="width:90%;text-align:center;margin-left:5%"/>
+<div id="timestamp"></div>
+<div id="info"></div>
+</body>
+</html>
