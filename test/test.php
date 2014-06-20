@@ -223,10 +223,10 @@ $my_cancel_id="1234";
 $result = $foo->cancel_order(4003,$limit_order_id,$my_cancel_id);
 
 if (!$result) {
-    print "Failed to cancel market stop $stop_order_id on 4003 \n";
+    print "Failed to cancel market stop $limit_order_id on 4003 \n";
     exit(0);
 } else {
-    print "Cancelled market stop on 4003 id $stop_order_id cancel id $result\n";
+    print "Cancelled market stop on 4003 id $limit_order_id cancel id $result\n";
 }
 
 print_events($foo);
