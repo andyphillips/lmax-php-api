@@ -15,14 +15,16 @@
 require_once("../../src/lmaxapi.php");
 require_once("../../src/get_password.php");
 
+date_default_timezone_set("UTC");
+
 get_username_password();
 
 // Log in to demo site
 // 
-// demo is https://testapi.lmaxtrader.com/
+// demo is https://web-order.london-demo.lmax.com/
 // prod is https://api.lmaxtrader.com/ 
 // 
-$conn = new lmaxapi("https://testapi.lmaxtrader.com/");
+$conn = new lmaxapi("https://web-order.london-demo.lmax.com/");
 
 // logs in and populates a couple of fields like account id and currency.
 // username, password and product type 

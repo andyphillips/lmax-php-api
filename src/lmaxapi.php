@@ -462,7 +462,7 @@ class lmaxapi
     protected $my_socket;	// curl session handle. 
     protected $username;
     protected $password;
-    protected $url;		// base url testapi.lmaxtrader.com or api.lmaxtrader.com
+    protected $url;		// base url web-order.london-demo.lmax.com or api.lmaxtrader.com
     protected $connected=FALSE;    // do we have a live session. 
     protected $session_cookies;    // our session cookie &lb cookie
     protected $longpollkey=FALSE;  // ?
@@ -488,7 +488,7 @@ class lmaxapi
     // This is where we specify the site we're connecting to. 
     // We default to the test site. 
     // 
-    function __construct($url="https://testapi.lmaxtrader.com")
+    function __construct($url="https://web-order.london-demo.lmax.com")
     {
 	if (!isset($url)) {
 	    throw new Exception ("missing url");
@@ -516,7 +516,7 @@ class lmaxapi
     function set_std_headers()
     {
 	
-	$this->http_std_headers[] = "Host: testapi.lmaxtrader.com";
+	$this->http_std_headers[] = "Host: web-order.london-demo.lmax.com";
 	$this->http_std_headers[] = "User-Agent: LMAX PHP client $this->version";
 //	$this->http_std_headers[] = "User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:7.0.1) Gecko/20100101 Firefox/7.0.12011-10-16 20:23:00";
 	$this->http_std_headers[] = "Content-Type: application/json; charset=utf-8";
