@@ -1,7 +1,11 @@
 <?php
 
+// These tests need a harness and isolation.
+
 require_once("../src/lmaxapi.php");
 require_once("../src/get_password.php");
+
+date_default_timezone_set("GMT");
 
 function print_events($foo)
 {
@@ -67,14 +71,13 @@ function retrieve_market_data($conn)
     return $bid; 
 }
     
-
 get_username_password();
 
 $foo = new lmaxapi();
 
 // set to true to get more info about the JSON and cookies being sent/received 
-$foo->DEBUG=TRUE;
-$foo->VERBOSE=TRUE;
+$foo->DEBUG=FALSE;
+$foo->VERBOSE=FALSE;
 
 print "\n---Login---\n";
 
@@ -122,9 +125,12 @@ print "GBP groups\n";
 $result = $foo->search_instruments("GBP");
 
 //print_r($result);
+$instrument_list =array( );
 
 foreach ($result as $id => $instrument){
     print $id.": ".$instrument->symbol." ".$instrument->contract_unit_of_measure."\n";
+    if ($instrument->symbol == "GBP/USD") array_push($instrument_list, $id);
+    if ($instrument->symbol == "EUR/GBP") array_push($instrument_list, $id);    
 }
 
 //
@@ -148,8 +154,7 @@ if ($foo->setup_subscription("order") === FALSE) {
     print "setup subscription to order book ok\n";
 }
 
-// subscribe to the market data feed for a bunch of instruments.
-$instrument_list =array( 4003, 100437 );
+// subscribe to the market data feed for the instruments listed above.
 //
 $result = $foo->subscribe_to_orderbook($instrument_list);
 
@@ -165,10 +170,10 @@ print "\n---placing order---\n";
 // Place market order
 // 
 // 
-$result = $foo->place_order(4003,order_type::market,fill_strategy::IoC,1);
+$result = $foo->place_order($instrument_list[0],order_type::market,fill_strategy::IoC,1);
 
 if (!$result) {
-    print "Failed to place immediate or cancel market buy order on 4003 for 1 contract\n";
+    print "Failed to place immediate or cancel market buy order on $instrument_list[0] for 1 contract\n";
     exit(0);
 } else {
     print "placed immediate or cancel  market buy order for quantity 1, order id $result\n";
@@ -184,29 +189,29 @@ print_events($foo);
 
 print "\n---closing market order---\n";
 
-$result = $foo->close_order(4003,$market_order_id,-1);
+$result = $foo->close_order($instrument_list[0],$market_order_id,-1);
 
 if (!$result) {
-    print "Failed to close out market buy order on 4003 for 1 contract\n";
+    print "Failed to close out market buy order on $instrument_list[0] for 1 contract\n";
     exit(0);
 } else {
     print "Closed market order for quantity 1, order id $result\n";
 }
 
 // 
-// get an orderbook update (marketdata) for orderbook 4003 so we know where the bid/ask is to place a limit order
+// get an orderbook update (marketdata) for orderbook gbp/usd so we know where the bid/ask is to place a limit order
 //
 $bid = retrieve_market_data($foo);
 
 // 
 // place a GTC limit order. 
 // 
-print "\n---placing GTC limit order 10 pips away from price---\n";
+print "\n---placing GTC limit order on gbp/usd 10 pips away from price---\n";
 
-$result = $foo->place_order(4003,order_type::limit,fill_strategy::GTC,1,($bid-0.00010));
+$result = $foo->place_order($instrument_list[0],order_type::limit,fill_strategy::GTC,1,($bid-0.00010));
 
 if (!$result) {
-    print "Failed to place GTC limit buy order on 4003 for 1 contract\n";
+    print "Failed to place GTC limit buy order on gbp/usd for 1 contract\n";
     exit(0);
 } else {
     print "placed GTC limit buy order for quantity 1, order id $result\n";
@@ -220,13 +225,13 @@ print "\n---cancelling limit order---\n";
 
 $my_cancel_id="1234";
 
-$result = $foo->cancel_order(4003,$limit_order_id,$my_cancel_id);
+$result = $foo->cancel_order($instrument_list[0],$limit_order_id,$my_cancel_id);
 
 if (!$result) {
-    print "Failed to cancel market stop $limit_order_id on 4003 \n";
+    print "Failed to cancel market stop $limit_order_id on $instrument_list[0] \n";
     exit(0);
 } else {
-    print "Cancelled market stop on 4003 id $limit_order_id cancel id $result\n";
+    print "Cancelled market stop on $instrument_list[0] id $limit_order_id cancel id $result\n";
 }
 
 print_events($foo);

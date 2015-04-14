@@ -462,7 +462,7 @@ class lmaxapi
     protected $my_socket;	// curl session handle. 
     protected $username;
     protected $password;
-    protected $url;		// base url web-order.london-demo.lmax.com or api.lmaxtrader.com
+    protected $url;		// base url web-api.london-demo.lmax.com or api.lmaxtrader.com
     protected $connected=FALSE;    // do we have a live session. 
     protected $session_cookies;    // our session cookie &lb cookie
     protected $longpollkey=FALSE;  // ?
@@ -488,7 +488,7 @@ class lmaxapi
     // This is where we specify the site we're connecting to. 
     // We default to the test site. 
     // 
-    function __construct($url="https://web-order.london-demo.lmax.com")
+    function __construct($url="https://web-api.london-demo.lmax.com")
     {
 	if (!isset($url)) {
 	    throw new Exception ("missing url");
@@ -516,7 +516,7 @@ class lmaxapi
     function set_std_headers()
     {
 	
-	$this->http_std_headers[] = "Host: web-order.london-demo.lmax.com";
+	$this->http_std_headers[] = "Host: web-api.london-demo.lmax.com";
 	$this->http_std_headers[] = "User-Agent: LMAX PHP client $this->version";
 //	$this->http_std_headers[] = "User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:7.0.1) Gecko/20100101 Firefox/7.0.12011-10-16 20:23:00";
 	$this->http_std_headers[] = "Content-Type: application/json; charset=utf-8";
@@ -802,7 +802,8 @@ class lmaxapi
     function get_app_params()
     {
 	if (empty($this->app_params)){
-	    $result=$this->get_request("/public/config/getApplicationParameters");
+	    $result=$this->get_request("/public/security/getApplicationParameters"); // note we can now add a language 
+//	    $result=$this->get_request("/public/security/getApplicationParameters?language=en_GB"); 
 
 	    // app error check 
 	    if (!$this->check_ok($result)){
@@ -1039,8 +1040,10 @@ class lmaxapi
 		$updates[] = new account_update($value);
 		break;
 	     case "orders":
-		// See RT 27031 & RT 27033 for brokenness around this call and returned data. 
-		$value = $value[0]->page[0]->order;
+		// See RT 27031 & RT 27033 for brokenness around this call and returned data.
+		if (!empty($value[0]->page[0])) {
+		    $value = $value[0]->page[0]->order;
+		}
 	     case "order":
 		// we normally get an array of active orders		
 		foreach ($value as $item) {

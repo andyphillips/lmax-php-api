@@ -21,10 +21,10 @@ get_username_password();
 
 // Log in to demo site
 // 
-// demo is https://web-order.london-demo.lmax.com/
+// demo is https://web-api.london-demo.lmax.com/
 // prod is https://api.lmaxtrader.com/ 
 // 
-$conn = new lmaxapi("https://web-order.london-demo.lmax.com/");
+$conn = new lmaxapi("https://web-api.london-demo.lmax.com/");
 
 // logs in and populates a couple of fields like account id and currency.
 // username, password and product type 
