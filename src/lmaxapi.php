@@ -163,7 +163,7 @@ class position
     public $short_unfilled_cost;
     public $long_unfilled_cost;
     public $open_quantity;
-    public $cululative_cost;
+    public $cumulative_cost;
     public $open_cost;
     public $type;
     
@@ -189,6 +189,43 @@ class position
 	     case 'cumulativeCost': $this->cumulative_cost = $value[0];
 		break;
 	     case 'openCost': $this->open_cost = $value[0];
+		break;
+	     default:
+		//ignore
+	    } // switch 
+	} // foreach $position as $tag => $value
+    }// parse json like object. 
+
+    function __construct($data=FALSE)
+    {
+	if ($data) $this->parse_input($data);
+	return TRUE;
+    }
+    
+}
+
+// helper class for rejected instructions
+class rejected_instruction 
+{
+    public $account_id;
+    public $instrument_id;
+    public $instruction_id;
+    public $reason;
+    
+    function parse_input($reject) 
+    {
+	$this->type = "rejected_instruction";
+	
+	foreach ($reject as $tag => $value)
+	{
+	    switch ($tag) {
+	     case 'accountId': $this->account_id = $value[0];
+		break;
+	     case 'instrumentId': $this->instrument_id = $value[0];
+		break;
+	     case 'instructionId': $this->instruction_id = $value[0];
+		break;
+	     case 'reason': $this->reason = $value[0];
 		break;
 	     default:
 		//ignore
@@ -232,7 +269,7 @@ class execution
     // class would have been better. 
    function __construct($data)
     {
-	print_r($data);
+//	print_r($data);
 	$execution_id = $data->executionId;
 	if (array_key_exists('execution',$data)) {
 	    $this->value = new price_and_quantity($data->execution[0]->price[0],$data->execution[0]->quantity[0]);
@@ -353,6 +390,8 @@ class orderbook_update
     public $valuation_bid_price;
     public $valuation_ask_price;
     public $last_traded_price;
+    public $nbids;
+    public $nasks;
     
     function parse_ob2($ob2) {
 	
@@ -376,23 +415,30 @@ class orderbook_update
 	$this->valuation_ask_price = $data[8];
 	$this->last_traded_price = $data[9];
 	
-	// bids
-	$tmp = explode(';',$data[2]);
+	// bids. If the instrument is closed or has no data we'll get an empty string.
+	$this->nbids=0;
+	if ($data[2] != "" ) {
+	    $tmp = explode(';',$data[2]);
 	
-	foreach ($tmp as $update) {
-	    $atom = explode('@',$update);
-	    $this->bids[]=new price_and_quantity($atom[1],$atom[0]);
+	    foreach ($tmp as $update) {
+		$atom = explode('@',$update);
+		$this->bids[]=new price_and_quantity($atom[1],$atom[0]);
+		$this->nbids++;
+	    }
 	}
-
-	// asks 
-	$tmp = explode(';',$data[3]);
-	
-	foreach ($tmp as $update) {
-	    $atom = explode('@',$update);
-	    $this->asks[] = new price_and_quantity($atom[1],$atom[0]);
+	// asks. ditto. 
+	$this->nasks=0;
+	if ($data[3] != "" ) {
+	    $tmp = explode(';',$data[3]);
+	    
+	    foreach ($tmp as $update) {
+		$atom = explode('@',$update);
+		$this->asks[] = new price_and_quantity($atom[1],$atom[0]);
+		$this->nasks++;
+	    }
 	}
     }
-
+	
     function __construct($data=FALSE)
     {
 	if ($data) $this->parse_ob2($data);
@@ -458,7 +504,7 @@ class account_update
 // main class 
 class lmaxapi 
 {
-    protected $version = 1.3;
+    protected $version = 1.4;
     protected $my_socket;	// curl session handle. 
     protected $username;
     protected $password;
@@ -602,6 +648,7 @@ class lmaxapi
 	//
 	if (curl_errno($this->my_socket)){
 	    echo "error - ". curl_error($this->my_socket);
+	    return false;
 	}
 		
 	return json_decode($result);
@@ -801,8 +848,8 @@ class lmaxapi
     //
     function get_app_params()
     {
-	if (empty($this->app_params)){
-	    $result=$this->get_request("/public/security/getApplicationParameters"); // note we can now add a language 
+	if (empty($this->app_params)){  
+	    $result=$this->get_request("/secure/getApplicationParameters"); // note we can now add a language 
 //	    $result=$this->get_request("/public/security/getApplicationParameters?language=en_GB"); 
 
 	    // app error check 
@@ -1022,7 +1069,10 @@ class lmaxapi
 	if ($this->sequence_no === FALSE) $this->sequence_no = -1;
 	    
 	$result = $this->post_request("/push/longPoll",$postdata);
+
+	if ($result == false) return false;
 	
+//	print_r($result);
 	$this->sequence_no = $result->events[0]->header[0]->seq[0];
 	
 	foreach ($result->events[0]->body[0] as $tag => $value) {
@@ -1057,6 +1107,11 @@ class lmaxapi
 	     case "position":
 		foreach ($value as $item) {
 		    $updates[] = new position($item);
+		}
+		break;
+	     case "instructionRejected":
+		foreach ($value as $item) {
+		    $updates[] = new rejected_instruction($item);
 		}
 		break;
 #		foreach ($value->page as $tag2 =>$order) {

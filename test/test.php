@@ -7,8 +7,33 @@ require_once("../src/get_password.php");
 
 date_default_timezone_set("GMT");
 
+class order_state
+{
+    const pending = 0;
+    const working  = 1;  // for limit
+    const rejected  = 2;
+    const matched = 3;
+    const closed = 4;
+}
+
+class my_order
+{
+    public $order_id;
+    public $state;
+    
+    function __construct ($order_id, $state) 
+    {
+	$this->order_id = $order_id;
+	$this->state = $state;
+    }
+}
+
+$myorders = array();
+
 function print_events($foo)
 {
+    global $myorders;
+    
     $result = $foo->get_events();
 
     foreach ($result as $update) {
@@ -17,13 +42,16 @@ function print_events($foo)
 	 case "orderbook":
 	    // prices are represented as an array of $price and $quantity object.
 	    // with top of book being the [0] th item. 
-	    $best_ask = $update->asks[0]->price;
-	    $best_bid = $update->bids[0]->price;
-	    $spread = $best_ask - $best_bid;
-	    
-	    print date("Ymd-h:i:s",($update->exchange_time_stamp)/1000) . "." . sprintf("%03.3dms",$update->exchange_time_stamp %1000) . 
-	      "  $update->instrument_id bids: " . $update->bids[0]->price. " ". $update->bids[1]->price .
-	      "  asks: " . $update->asks[0]->price. " " . $update->asks[1]->price . " spread: $spread\n"; 
+	    if (($update->nbids > 0) && ($update->nasks >0)){
+		$best_ask = $update->asks[0]->price;
+		$best_bid = $update->bids[0]->price;
+		$spread = $best_ask - $best_bid;
+		print date("Ymd-h:i:s",($update->exchange_time_stamp)/1000) . "." . sprintf("%03.3dms",$update->exchange_time_stamp %1000) . 
+		  "  $update->instrument_id bids: " . $update->bids[0]->price. " ". $update->bids[1]->price .
+		  "  asks: " . $update->asks[0]->price. " " . $update->asks[1]->price . " spread: $spread\n";
+	    } else {
+		print "no bids and/or asks\n";
+	    }
 	    break;
 	 case "account":
 	    print_r($update);
@@ -35,6 +63,17 @@ function print_events($foo)
 	    break;
 	 case "position":
 	    print_r($update);
+	    print "\n";
+	    break;
+	 case "rejected_instruction":
+	    print_r($update);
+	    foreach ($myorders as $myorder){
+		if ($myorder->order_id == $update->instruction_id) 
+		{
+		    echo "$myorder->order_id rejected because $update->reason\n";
+		    $myorder->state = order_state::rejected;
+		}
+	    }
 	    print "\n";
 	    break;
 	 default:
@@ -49,24 +88,31 @@ function retrieve_market_data($conn)
     while (!$quit) {
 	// This returns an array of objects of type price.
 	$result = $conn->get_events();
-	if ($result !== FALSE) 
-	  foreach ($result as $update) {
-	      if ($update->type == "orderbook") {
-		  // prices are represented as $price => $quantity 
-		  $bid = $update->bids[0]->price;
-		  $ask = $update->asks[0]->price;
-		  $spread = $ask - $bid;
-		  
-		  print "market data: ".date("Ymd-H:i:s",($update->exchange_time_stamp)/1000) . "." . 
-		    sprintf("%03.3dms",$update->exchange_time_stamp %1000) . 
-		    "  GBP/USD bids: " . 
-		    $update->bids[0]->price ." ". 
-		    $update->bids[1]->price .
-		    "  asks: " . $update->asks[0]->price . " ". 
-		    $update->asks[1]->price . " spread: $spread\n";
-		  $quit = 1;
-	      }	      
-	  }
+	if ($result === FALSE) return false;
+	print_r($result);
+	
+	foreach ($result as $update) {
+	    if ($update->type == "orderbook") {
+		// prices are represented as $price => $quantity 
+		if (($update->nbids > 0) && ($update->nasks >0)){
+		    $bid = $update->bids[0]->price;
+		    $ask = $update->asks[0]->price;
+		    $spread = $ask - $bid;
+		    
+		    print "market data: ".date("Ymd-H:i:s",($update->exchange_time_stamp)/1000) . "." . 
+		      sprintf("%03.3dms",$update->exchange_time_stamp %1000) . 
+		      "  GBP/USD bids: " . 
+		      $update->bids[0]->price ." ". 
+		      $update->bids[1]->price .
+		      "  asks: " . $update->asks[0]->price . " ". 
+		      $update->asks[1]->price . " spread: $spread\n";
+		    $quit = 1;
+		} else {
+		    print "no/single sided market data\n";
+		    return false;
+		}
+	    }
+	}
     }
     return $bid; 
 }
@@ -130,7 +176,11 @@ $instrument_list =array( );
 foreach ($result as $id => $instrument){
     print $id.": ".$instrument->symbol." ".$instrument->contract_unit_of_measure."\n";
     if ($instrument->symbol == "GBP/USD") array_push($instrument_list, $id);
-    if ($instrument->symbol == "EUR/GBP") array_push($instrument_list, $id);    
+    if ($instrument->symbol == "EUR/GBP") {
+	array_push($instrument_list, $id);
+	print "instrument data for EUR/GBP";
+	print_r($instrument);
+    }
 }
 
 //
@@ -179,23 +229,28 @@ if (!$result) {
     print "placed immediate or cancel  market buy order for quantity 1, order id $result\n";
 }
 
-$market_order_id = $result;
+$myorders["place_market"] = new my_order($result, order_state::pending);
 
+// and process them. 
 print_events($foo);
 
 //
 // close out market order  
 // 
 
-print "\n---closing market order---\n";
+// note. we don't have processing for closed order state yet. 
+if ($myorders["place_market"]->state != order_state::rejected) {
+    print "\n---closing market order---\n";
+    $result = $foo->close_order($instrument_list[0],$myorders["place_market"]->order_id,-1);
 
-$result = $foo->close_order($instrument_list[0],$market_order_id,-1);
-
-if (!$result) {
-    print "Failed to close out market buy order on $instrument_list[0] for 1 contract\n";
-    exit(0);
+    if (!$result) {
+	print "Failed to close out market buy order on $instrument_list[0] for 1 contract\n";
+	exit(0);
+    } else {
+	print "Closed market order for quantity 1, order id $result\n";
+    }
 } else {
-    print "Closed market order for quantity 1, order id $result\n";
+    print "skipping cancelling of rejected order\n";
 }
 
 // 
@@ -203,39 +258,43 @@ if (!$result) {
 //
 $bid = retrieve_market_data($foo);
 
-// 
-// place a GTC limit order. 
-// 
-print "\n---placing GTC limit order on gbp/usd 10 pips away from price---\n";
-
-$result = $foo->place_order($instrument_list[0],order_type::limit,fill_strategy::GTC,1,($bid-0.00010));
-
-if (!$result) {
-    print "Failed to place GTC limit buy order on gbp/usd for 1 contract\n";
-    exit(0);
+if ($bid) {
+    // 
+    // place a GTC limit order. 
+    // 
+    print "\n---placing GTC limit order on gbp/usd 10 pips away from price---\n";
+    
+    $result = $foo->place_order($instrument_list[0],order_type::limit,fill_strategy::GTC,1,($bid-0.00010));
+    
+    if (!$result) {
+	print "Failed to place GTC limit buy order on gbp/usd for 1 contract\n";
+	exit(0);
+    } else {
+	print "placed GTC limit buy order for quantity 1, order id $result\n";
+    }
+    
+    $limit_order_id = $result;
+    
+    print_events($foo);
+    
+    print "\n---cancelling limit order---\n";
+    
+    $my_cancel_id="1234";
+    
+    $result = $foo->cancel_order($instrument_list[0],$limit_order_id,$my_cancel_id);
+    
+    if (!$result) {
+	print "Failed to cancel market stop $limit_order_id on $instrument_list[0] \n";
+	exit(0);
+    } else {
+	print "Cancelled market stop on $instrument_list[0] id $limit_order_id cancel id $result\n";
+    }
+    
+    print_events($foo);
+    
 } else {
-    print "placed GTC limit buy order for quantity 1, order id $result\n";
+    print "unable to place or cancel limit orders due to no market data\n";
 }
-
-$limit_order_id = $result;
-
-print_events($foo);
-
-print "\n---cancelling limit order---\n";
-
-$my_cancel_id="1234";
-
-$result = $foo->cancel_order($instrument_list[0],$limit_order_id,$my_cancel_id);
-
-if (!$result) {
-    print "Failed to cancel market stop $limit_order_id on $instrument_list[0] \n";
-    exit(0);
-} else {
-    print "Cancelled market stop on $instrument_list[0] id $limit_order_id cancel id $result\n";
-}
-
-print_events($foo);
-
 print "\n---logout---\n";
 
 $result = $foo->logout();
@@ -247,3 +306,4 @@ if ($result) {
 }
 
 ?>
+	

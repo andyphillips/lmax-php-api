@@ -87,17 +87,21 @@ while (1) {
      foreach ($result as $update) {
 	if ($update->type == "orderbook") {
 	    // prices are represented as $price => $quantity 
-	    $bid = $update->bids[0]->price;
-	    $ask = $update->asks[0]->price;
-	    $spread = $ask - $bid;
-	    
-	    print date("Ymd-H:i:s",($update->exchange_time_stamp)/1000) . "." . 
-	      sprintf("%03.3dms",$update->exchange_time_stamp %1000) . 
-	      "  GBP/USD bids: " . 
-	      $update->bids[0]->price ." ". 
-	      $update->bids[1]->price .
-	      "  asks: " . $update->asks[0]->price . " ". 
-	      $update->asks[1]->price . " spread: $spread\n"; 
+	    if (($update->nbids > 0) && ($update->nasks > 0)) {
+		$bid = $update->bids[0]->price;
+		$ask = $update->asks[0]->price;
+		$spread = $ask - $bid;
+		
+		print date("Ymd-H:i:s",($update->exchange_time_stamp)/1000) . "." . 
+		  sprintf("%03.3dms",$update->exchange_time_stamp %1000) . 
+		  "  GBP/USD bids: " . 
+		  $update->bids[0]->price ." ". 
+		  $update->bids[1]->price .
+		  "  asks: " . $update->asks[0]->price . " ". 
+		  $update->asks[1]->price . " spread: $spread\n";
+	    } else {
+		print "no bids and/or asks";
+	    }
 	}
     }
 }
