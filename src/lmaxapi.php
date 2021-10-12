@@ -18,6 +18,8 @@
 // I'd advise you to look at the "proper" LMAX .NET and Java APIs for supported trading apis. 
 // They're tested and QA'ed. This is not. Here be dragons and lions and tigers. 
 //
+// Warning: This library is not maintained. The interfaces it uses are deprecated. 
+//          You must use the java or .net api's, or the new REST API. 
 // 
 // enums of order types and fill strategy. 
 class order_type
@@ -243,17 +245,16 @@ class rejected_instruction
 
 
 // helper class for orderbook/marketdata update - and anywhere we need to store price/quantity pairs. 
+// removed price and quantity type. This is an atomic type that doesn't need it. 
 class price_and_quantity
 {
     public $price;
     public $quantity;
-    public $type;
     
     function __construct($price,$quantity)
     {
 	$this->price = $price;
 	$this->quantity = $quantity;
-	$this->type = "price_and_quantity";
     }
 }
 
@@ -945,6 +946,8 @@ class lmaxapi
     // vs searching for just +foo. From poking the ui it appears that searching for +foo
     // seems to work well in all cases.  
     // 
+    // This is basically the same call that the search box on the lmax UI uses. So anything that works there, should work here. 
+    // e.g. "GBP" for instruments with GBP in them, and CURRENCY for all 'currencies'. currencies may include things like gold.
     function search_instruments($search_string)
     {
 	$instruments = array();
@@ -1307,7 +1310,18 @@ class lmaxapi
 	return $return_id;
     }
 	
-    
+    function request_account_state ()
+    {
+	$result = $this->get_request("/secure/account/requestAccountState");
+
+	//app error check 
+	if (!$this->check_ok($result)){
+	    if ($this->VERBOSE) print "LMAXAPI: request rejected\n";	    
+	    return False;
+	} 
+
+	return true;
+    }
 } // class lmaxapi
 
     

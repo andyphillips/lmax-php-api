@@ -95,10 +95,13 @@ while (1) {
 		print date("Ymd-H:i:s",($update->exchange_time_stamp)/1000) . "." . 
 		  sprintf("%03.3dms",$update->exchange_time_stamp %1000) . 
 		  "  GBP/USD bids: " . 
-		  $update->bids[0]->price ." ". 
-		  $update->bids[1]->price .
-		  "  asks: " . $update->asks[0]->price . " ". 
-		  $update->asks[1]->price . " spread: $spread\n";
+		  $update->bids[0]->quantity."@".$update->bids[0]->price ." ". 
+		  $update->bids[1]->quantity."@".$update->bids[1]->price ." ".
+		  $update->bids[2]->quantity."@".$update->bids[2]->price .
+		  "  asks: " .
+		  $update->asks[0]->quantity."@".$update->asks[0]->price . " ". 
+		  $update->asks[1]->quantity."@".$update->asks[1]->price . " ". 
+		  $update->asks[2]->quantity."@".$update->asks[2]->price . " spread: $spread\n";
 	    } else {
 		print "no bids and/or asks";
 	    }

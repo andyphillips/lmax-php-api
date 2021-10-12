@@ -141,7 +141,7 @@ print "\n---get_app_param---\n";
 // retrieves parameters about this exchange, plus symbol lists by group.
 // Should hide this... 
 $result = $foo->get_app_param("demoRegistrationEnabled");
-print "demoRegistrationEnabled ".$result ."\n";
+print "demoRegistrationEnabled ".var_export($result) ."\n";
 
 print "\n---get_symbol_groups---\n";
 
@@ -295,6 +295,22 @@ if ($bid) {
 } else {
     print "unable to place or cancel limit orders due to no market data\n";
 }
+
+print "\n---request account state---\n";
+
+$result = $foo->request_account_state();
+
+if (!$result) {
+  print "Failed to request account state\n";
+  exit(0);
+} else {
+   print "requested account state\n";
+}
+
+print "\n---events---\n";
+
+print_events($foo);
+
 print "\n---logout---\n";
 
 $result = $foo->logout();
