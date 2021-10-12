@@ -1,6 +1,15 @@
 lmax-php-api
 ============
 
+BIG WARNING BIG WARNING BIG WARNING BIG WARNING BIG WARNING 
+
+This api is deprecated. You should be using the new REST API. 
+Failing that the Java or .NET apis. This is not a supported
+interface and likely to change or go away without warning.
+
+BIG WARNING BIG WARNING BIG WARNING BIG WARNING BIG WARNING 
+
+
 An example php binding for the lmax api
 
 Classes to connect to the LMAX API and hopefully do some useful 
@@ -18,8 +27,7 @@ library was not intended for that. I've never put real money through
 it and strongly advise you don't either. I'd advise you to look at the 
 "proper" LMAX .NET and Java APIs for supported trading apis. 
 
-They're tested and QA'ed. This is not.  Here be dragons and lions and
-tigers. 
+They're tested and QA'ed. This is not.  
 
 LMAX don't support or even know about this. You can try and ask them
 for support on general protocol questions, but they will stare at you
